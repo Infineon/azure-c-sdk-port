@@ -87,7 +87,7 @@ This library is supported only on the AnyCloud framework.
 
 - [Azure SDK Port Library Version](./version.txt)
 
-- [Azure SDK Port Library API Documentation](https://cypresssemiconductorco.github.io/azure-sdk-port/api_reference_manual/html/index.html)
+- [Azure SDK Port Library API Documentation](https://cypresssemiconductorco.github.io/azure-c-sdk-port/api_reference_manual/html/index.html)
 
 - [Microsoft Azure SDK for Embedded C Library](https://github.com/Azure/azure-sdk-for-c/releases/tag/1.1.0)
 
