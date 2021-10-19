@@ -36,7 +36,17 @@
  * Implementation of Azure hub telemetry sample application on Cypress platforms
  */
 
-#define SAS_TOKEN_AUTH                         1
+/*
+ * Macro value 0 indicates that SAS token-based authentication is not used.
+ * Macro value 1 indicates that SAS token-based authentication is used.
+ */
+#define SAS_TOKEN_AUTH                  0
+
+/*
+ * Macro value true indicates that the SAS token needs to be read from the flash memory (from application buffer).
+ * Macro value false indicates that the SAS token needs to be read from the secured memory (only for secured platform device).
+ */
+#define SAS_TOKEN_LOCATION_FLASH        true
 
 #include <stdio.h>
 #include "cyhal.h"
@@ -60,6 +70,14 @@
 #include <az_iot.h>
 #include "mqtt_iot_sample_common.h"
 
+#ifdef CY_TFM_PSA_SUPPORTED
+#include "cy_wdt.h"
+#include "tfm_multi_core_api.h"
+#include "tfm_ns_interface.h"
+#include "tfm_ns_mailbox.h"
+#include "psa/protected_storage.h"
+#endif
+
 #define test_result_t cy_rslt_t
 #define TEST_PASS  CY_RSLT_SUCCESS
 #define TEST_FAIL  ( -1 )
@@ -79,15 +97,53 @@ static whd_interface_t                     iface ;
 static cy_mqtt_t                           mqtthandle;
 static iot_sample_environment_variables    env_vars;
 static az_iot_hub_client                   hub_client;
-static char                                mqtt_client_username_buffer[128];
-static char                                mqtt_endpoint_buffer[128];
+static char                                mqtt_client_username_buffer[IOT_SAMPLE_APP_BUFFER_SIZE_IN_BYTES];
+static char                                mqtt_endpoint_buffer[IOT_SAMPLE_APP_BUFFER_SIZE_IN_BYTES];
 volatile bool                              connect_state = false;
 
+#if SAS_TOKEN_AUTH
+static iot_sample_credentials              sas_credentials;
+static char                                device_id_buffer[IOT_SAMPLE_APP_BUFFER_SIZE_IN_BYTES];
+static char                                sas_token_buffer[IOT_SAMPLE_APP_BUFFER_SIZE_IN_BYTES];
+#endif
+
+#ifdef CY_TFM_PSA_SUPPORTED
+static struct                              ns_mailbox_queue_t ns_mailbox_queue;
+#endif
+
 /**
- * @brief The network buffer must remain valid for the lifetime of the MQTT context
+ * @brief The network buffer must remain valid for the lifetime of the MQTT context.
  */
 static uint8_t                             *buffer = NULL;
 
+/*-----------------------------------------------------------*/
+#ifdef CY_TFM_PSA_SUPPORTED
+static void tfm_ns_multi_core_boot(void)
+{
+    int32_t ret;
+
+    if (tfm_ns_wait_for_s_cpu_ready())
+    {
+        /* Error sync'ing with secure core */
+        /* Avoid undefined behavior after multi-core sync-up failed. */
+        for (;;)
+        {
+        }
+    }
+
+    ret = tfm_ns_mailbox_init(&ns_mailbox_queue);
+    if (ret != MAILBOX_SUCCESS)
+    {
+        /* Non-secure mailbox initialization failed. */
+        /* Avoid undefined behavior after NS mailbox initialization failed. */
+        for (;;)
+        {
+        }
+    }
+}
+#endif
+
+/*-----------------------------------------------------------*/
 static void donothing(void *arg)
 {
 
@@ -145,10 +201,10 @@ test_result_t ConnectWifi()
     nw_interface.role = CY_LWIP_STA_NW_INTERFACE;
     nw_interface.whd_iface = iface;
 
-    /* Add interface to lwIP*/
+    /* Add interface to lwIP */
     cy_lwip_add_interface( &nw_interface, NULL ) ;
 
-    /* Bring up the network*/
+    /* Bring up the network */
     cy_lwip_network_up( &nw_interface );
 
     struct netif *net = cy_lwip_get_interface( CY_LWIP_STA_NW_INTERFACE );
@@ -214,6 +270,7 @@ static cy_rslt_t disconnect_and_delete_mqtt_client( void )
     {
         TEST_INFO(( "\n\rcy_mqtt_disconnect ----------------------- Fail \n" ));
     }
+    connect_state = false;
 
     result = cy_mqtt_delete( mqtthandle );
     if( result == TEST_PASS )
@@ -309,7 +366,7 @@ static cy_rslt_t connect_mqtt_client_to_iot_hub(void)
     size_t username_len = 0, client_id_len = 0;
     cy_mqtt_connect_info_t connect_info;
 
-    /* Get the MQTT client ID used for the MQTT connection. */
+    /* Get the MQTT client ID used for the MQTT connection */
     char mqtt_client_id_buffer[128];
 
     memset( &connect_info, 0x00, sizeof( cy_mqtt_connect_info_t ) );
@@ -322,7 +379,7 @@ static cy_rslt_t connect_mqtt_client_to_iot_hub(void)
         return TEST_FAIL;
     }
 
-    /* Get the MQTT client user name. */
+    /* Get the MQTT client user name */
     rc = az_iot_hub_client_get_user_name( &hub_client, mqtt_client_username_buffer,
                                           sizeof(mqtt_client_username_buffer), &username_len );
     if( az_result_failed(rc) )
@@ -339,9 +396,9 @@ static cy_rslt_t connect_mqtt_client_to_iot_hub(void)
 
 #if SAS_TOKEN_AUTH
     connect_info.username = mqtt_client_username_buffer;
-    connect_info.password = IOT_AZURE_PASSWORD;
+    connect_info.password = (char *)sas_credentials.sas_token;
     connect_info.username_len = username_len;
-    connect_info.password_len = IOT_AZURE_PASSWORD_LENGTH;
+    connect_info.password_len = sas_credentials.sas_token_len;
 #else
     connect_info.username = mqtt_client_username_buffer;
     connect_info.password = NULL;
@@ -381,7 +438,7 @@ static cy_rslt_t create_and_configure_mqtt_client( void )
                                                  mqtt_endpoint_buffer,
                                                  sizeof(mqtt_endpoint_buffer) );
 
-    /* Initialize the hub client with default connection options. */
+    /* Initialize the hub client with the default connection options */
     rc = az_iot_hub_client_init( &hub_client, env_vars.hub_hostname, env_vars.hub_device_id, NULL );
     if( az_result_failed( rc ) )
     {
@@ -389,7 +446,7 @@ static cy_rslt_t create_and_configure_mqtt_client( void )
         return TEST_FAIL;
     }
 
-    /*Allocate the network buffer */
+    /* Allocate the network buffer */
     buffer = (uint8_t *) malloc( sizeof(uint8_t) * NETWORK_BUFFER_SIZE );
     if( buffer == NULL )
     {
@@ -412,38 +469,45 @@ static cy_rslt_t create_and_configure_mqtt_client( void )
     }
 
 #if SAS_TOKEN_AUTH
-            credentials.client_cert = (const char *)NULL;
-            credentials.client_cert_size = 0;
-            credentials.private_key = (const char *)NULL;
-            credentials.private_key_size = 0;
+    credentials.client_cert = (const char *)NULL;
+    credentials.client_cert_size = 0;
+    credentials.private_key = (const char *)NULL;
+    credentials.private_key_size = 0;
+    credentials.root_ca = (const char *) NULL;
+    credentials.root_ca_size = 0;
+    /* For SAS token based auth mode, RootCA verification is not required. */
+    credentials.root_ca_verify_mode = CY_AWS_ROOTCA_VERIFY_NONE;
+    /* Set cert and key location. */
+    credentials.cert_key_location = CY_AWS_CERT_KEY_LOCATION_RAM;
+    credentials.root_ca_location = CY_AWS_CERT_KEY_LOCATION_RAM;
 #else
-            credentials.client_cert = (const char *) &azure_client_cert;
-            credentials.client_cert_size = sizeof( azure_client_cert );
-            credentials.private_key = (const char *) &azure_client_key;
-            credentials.private_key_size = sizeof( azure_client_key );
+    credentials.client_cert = (const char *) &azure_client_cert;
+    credentials.client_cert_size = IOT_AZURE_CLIENT_CERT_LENGTH;
+    credentials.private_key = (const char *) &azure_client_key;
+    credentials.private_key_size = IOT_AZURE_CLIENT_KEY_LENGTH;
+    credentials.root_ca = (const char *) &azure_root_ca_certificate;
+    credentials.root_ca_size = IOT_AZURE_ROOT_CA_LENGTH;
 #endif
-            credentials.root_ca = (const char *) &azure_root_ca_certificate;
-            credentials.root_ca_size = sizeof( azure_root_ca_certificate );
-            broker_info.hostname = (const char *)&mqtt_endpoint_buffer;
-            broker_info.hostname_len = ep_size;
-            broker_info.port = IOT_DEMO_PORT_AZURE_S;
-            security = &credentials;
+    broker_info.hostname = (const char *)&mqtt_endpoint_buffer;
+    broker_info.hostname_len = ep_size;
+    broker_info.port = IOT_DEMO_PORT_AZURE_S;
+    security = &credentials;
 
-            result = cy_mqtt_create( buffer, NETWORK_BUFFER_SIZE,
-                                     security, &broker_info,
-                                     (cy_mqtt_callback_t)mqtt_event_cb, NULL,
-                                     &mqtthandle );
-            if( result == TEST_PASS )
-            {
-                TEST_INFO(( "\r\ncy_mqtt_create ----------------------------- Pass \n" ));
-            }
-            else
-            {
-                TEST_INFO(( "\r\ncy_mqtt_create ----------------------------- Fail \n" ));
-                return TEST_FAIL;
-            }
+    result = cy_mqtt_create( buffer, NETWORK_BUFFER_SIZE,
+                             security, &broker_info,
+                             (cy_mqtt_callback_t)mqtt_event_cb, NULL,
+                             &mqtthandle );
+    if( result == TEST_PASS )
+    {
+        TEST_INFO(( "\r\ncy_mqtt_create ----------------------------- Pass \n" ));
+    }
+    else
+    {
+        TEST_INFO(( "\r\ncy_mqtt_create ----------------------------- Fail \n" ));
+        return TEST_FAIL;
+    }
 #if 0
-           /* Generate the SAS key here for SAS based authentication */
+   /* Generate the shared access signature (SAS) key here for SAS-based authentication */
 #endif
     return CY_RSLT_SUCCESS;
 }
@@ -453,17 +517,18 @@ static cy_rslt_t configure_hub_environment_variables( void )
 {
     cy_rslt_t result = TEST_PASS;
 #if SAS_TOKEN_AUTH
-    env_vars.hub_device_id._internal.ptr = (uint8_t*)MQTT_CLIENT_IDENTIFIER_AZURE_SAS;
-    env_vars.hub_device_id._internal.size = MQTT_CLIENT_IDENTIFIER_AZURE_SAS_LENGTH;
+    env_vars.hub_device_id._internal.ptr = (uint8_t*)sas_credentials.device_id;
+    env_vars.hub_device_id._internal.size = (int32_t)sas_credentials.device_id_len;
+    env_vars.hub_sas_key._internal.ptr = (uint8_t*)sas_credentials.sas_token;
+    env_vars.hub_sas_key._internal.size = (int32_t)sas_credentials.sas_token_len;
 #else
     env_vars.hub_device_id._internal.ptr = (uint8_t*)MQTT_CLIENT_IDENTIFIER_AZURE_CERT;
     env_vars.hub_device_id._internal.size = MQTT_CLIENT_IDENTIFIER_AZURE_CERT_LENGTH;
+    env_vars.hub_sas_key._internal.ptr = NULL;
+    env_vars.hub_sas_key._internal.size = 0;
 #endif
     env_vars.hub_hostname._internal.ptr = (uint8_t*)IOT_DEMO_SERVER_AZURE;
     env_vars.hub_hostname._internal.size = strlen(IOT_DEMO_SERVER_AZURE);
-    env_vars.hub_sas_key._internal.ptr = (uint8_t*)IOT_AZURE_PASSWORD;
-    env_vars.hub_sas_key._internal.size = IOT_AZURE_PASSWORD_LENGTH;
-
     env_vars.sas_key_duration_minutes = 240;
     return result;
 }
@@ -474,6 +539,12 @@ static void Azure_hub_telemetry_app(void *arg)
 {
     cy_rslt_t TestRes = TEST_PASS ;
     uint8_t Failcount = 0, Passcount = 0, time_sec = 0;
+#ifdef CY_TFM_PSA_SUPPORTED
+    psa_status_t uxStatus = PSA_SUCCESS;
+    size_t read_len = 0;
+    (void)uxStatus;
+    (void)read_len;
+#endif
 
     cy_log_init( CY_LOG_ERR, NULL, NULL );
 
@@ -489,6 +560,55 @@ static void Azure_hub_telemetry_app(void *arg)
         Failcount++;
         goto exit;
     }
+
+    /*--------------------------------------------------------------------*/
+#if SAS_TOKEN_AUTH
+    (void)device_id_buffer;
+    (void)sas_token_buffer;
+#if ( (defined CY_TFM_PSA_SUPPORTED) && ( SAS_TOKEN_LOCATION_FLASH == false ) )
+    /* Read the Device ID from the secured memory */
+    uxStatus = psa_ps_get( PSA_DEVICEID_UID, 0, sizeof(device_id_buffer), device_id_buffer, &read_len );
+    if( uxStatus == PSA_SUCCESS )
+    {
+        device_id_buffer[read_len] = '\0';
+        TEST_INFO(( "\r\nRetrieved Device ID : %s\r\n", device_id_buffer ));
+        sas_credentials.device_id = (uint8_t*)device_id_buffer;
+        sas_credentials.device_id_len = read_len;
+    }
+    else
+    {
+        TEST_INFO(( "\r\n psa_ps_get for Device ID failed with %d\n", (int)uxStatus ));
+        TEST_INFO(( "\r\n Taken Device ID from MQTT_CLIENT_IDENTIFIER_AZURE_SAS macro. \n" ));
+        sas_credentials.device_id = (uint8_t*)MQTT_CLIENT_IDENTIFIER_AZURE_SAS;
+        sas_credentials.device_id_len = MQTT_CLIENT_IDENTIFIER_AZURE_SAS_LENGTH;
+    }
+
+    read_len = 0;
+
+    /* Read the SAS token from the secured memory */
+    uxStatus = psa_ps_get( PSA_SAS_TOKEN_UID, 0, sizeof(sas_token_buffer), sas_token_buffer, &read_len );
+    if( uxStatus == PSA_SUCCESS )
+    {
+        sas_token_buffer[read_len] = '\0';
+        TEST_INFO(( "\r\nRetrieved SAS token : %s\r\n", sas_token_buffer ));
+        sas_credentials.sas_token = (uint8_t*)sas_token_buffer;
+        sas_credentials.sas_token_len = read_len;
+    }
+    else
+    {
+        TEST_INFO(( "\r\n psa_ps_get for sas_token failed with %d\n", (int)uxStatus ));
+        TEST_INFO(( "\r\n Taken SAS Token from IOT_AZURE_PASSWORD macro. \n" ));
+        sas_credentials.sas_token = (uint8_t *)IOT_AZURE_PASSWORD;
+        sas_credentials.sas_token_len = IOT_AZURE_PASSWORD_LENGTH;
+    }
+#else
+    sas_credentials.device_id = (uint8_t*)MQTT_CLIENT_IDENTIFIER_AZURE_SAS;
+    sas_credentials.device_id_len = MQTT_CLIENT_IDENTIFIER_AZURE_SAS_LENGTH;
+    sas_credentials.sas_token = (uint8_t*)IOT_AZURE_PASSWORD;
+    sas_credentials.sas_token_len = IOT_AZURE_PASSWORD_LENGTH;
+#endif
+
+#endif /* SAS_TOKEN_AUTH */
 
     /*--------------------------------------------------------------------*/
     TestRes = configure_hub_environment_variables();
@@ -592,15 +712,30 @@ int main(void)
 
     (void)(result);
 
+#ifdef CY_TFM_PSA_SUPPORTED
+    /* Unlock and disable the WDT */
+    Cy_WDT_Unlock();
+    Cy_WDT_Disable();
+#endif
+
     /* Initialize the board support package */
     result = cybsp_init() ;
     CY_ASSERT( result == CY_RSLT_SUCCESS );
     /* Enable global interrupts */
     __enable_irq();
 
-    /* Initialize retarget-io to use the debug UART port. */
-    /* This is not required because target_io_init is done as part of BeginTesting. */
+    /* Initialize retarget-io to use the debug UART port */
+    /* This is not required because target_io_init is done as part of BeginTesting */
     cy_retarget_io_init( CYBSP_DEBUG_UART_TX, CYBSP_DEBUG_UART_RX, CY_RETARGET_IO_BAUDRATE );
+
+#ifdef CY_TFM_PSA_SUPPORTED
+    tfm_ns_multi_core_boot();
+    /* Initialize the TFM interface */
+    tfm_ns_interface_init();
+#endif
+
+    /* \x1b[2J\x1b[;H - ANSI ESC sequence for clear screen */
+    printf("\x1b[2J\x1b[;H");
 
     xTaskCreate( Azure_hub_telemetry_app, "Azure_hub_telemetry_app", 1024 * 10, NULL, 1, NULL ) ;
 

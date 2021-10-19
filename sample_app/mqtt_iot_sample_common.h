@@ -47,8 +47,9 @@
 
 #include <az_core.h>
 
-#define IOT_SAMPLE_SAS_KEY_DURATION_TIME_DIGITS   4
-#define IOT_SAMPLE_MQTT_PUBLISH_QOS               0
+#define IOT_SAMPLE_APP_BUFFER_SIZE_IN_BYTES       ( 256 )
+#define IOT_SAMPLE_SAS_KEY_DURATION_TIME_DIGITS   ( 4 )
+#define IOT_SAMPLE_MQTT_PUBLISH_QOS               ( 0 )
 
 //
 // Logging
@@ -122,38 +123,6 @@ bool get_az_span(az_span* out_span, char const* const error_message, ...);
     }                                                                                      \
   } while (0)
 
-//
-// Environment Variables
-//
-// DO NOT MODIFY: Service information
-//#define IOT_SAMPLE_ENV_HUB_HOSTNAME "AZ_IOT_HUB_HOSTNAME"
-#define IOT_SAMPLE_ENV_HUB_HOSTNAME "anycloud-iothub.azure-devices.net"
-//#define IOT_SAMPLE_ENV_PROVISIONING_ID_SCOPE "AZ_IOT_PROVISIONING_ID_SCOPE"
-#define IOT_SAMPLE_ENV_PROVISIONING_ID_SCOPE "AZ_IOT_PROVISIONING_ID_SCOPE"
-
-// DO NOT MODIFY: Device information
-#define IOT_SAMPLE_ENV_HUB_DEVICE_ID "AZ_IOT_HUB_DEVICE_ID"
-#define IOT_SAMPLE_ENV_HUB_SAS_DEVICE_ID "AZ_IOT_HUB_SAS_DEVICE_ID"
-#define IOT_SAMPLE_ENV_PROVISIONING_REGISTRATION_ID "AZ_IOT_PROVISIONING_REGISTRATION_ID"
-#define IOT_SAMPLE_ENV_PROVISIONING_SAS_REGISTRATION_ID "AZ_IOT_PROVISIONING_SAS_REGISTRATION_ID"
-
-// DO NOT MODIFY: SAS key
-#define IOT_SAMPLE_ENV_HUB_SAS_KEY "AZ_IOT_HUB_SAS_KEY"
-#define IOT_SAMPLE_ENV_PROVISIONING_SAS_KEY "AZ_IOT_PROVISIONING_SAS_KEY"
-#define IOT_SAMPLE_ENV_SAS_KEY_DURATION_MINUTES \
-  "AZ_IOT_SAS_KEY_DURATION_MINUTES" // Default is 2 hrs.
-
-// DO NOT MODIFY: the path to a PEM file containing the device certificate and
-// key as well as any intermediate certificates chaining to an uploaded group certificate.
-/**** ADD PATH OF device_cert_store.pem ******/
-//#define IOT_SAMPLE_ENV_DEVICE_X509_CERT_PEM_FILE_PATH "AZ_IOT_DEVICE_X509_CERT_PEM_FILE_PATH"
-#define IOT_SAMPLE_ENV_DEVICE_X509_CERT_PEM_FILE_PATH "../Cert/iot-device-CYPSoC6_03-primary.cert.pem"
-
-// DO NOT MODIFY: the path to a PEM file containing the server trusted CA
-// This is usually not needed on Linux or Mac but needs to be set on Windows.
-//#define IOT_SAMPLE_ENV_DEVICE_X509_TRUST_PEM_FILE_PATH "AZ_IOT_DEVICE_X509_TRUST_PEM_FILE_PATH"
-#define IOT_SAMPLE_ENV_DEVICE_X509_TRUST_PEM_FILE_PATH ""
-
 typedef struct
 {
   az_span hub_device_id;
@@ -166,6 +135,14 @@ typedef struct
   az_span x509_trust_pem_file_path;
   uint32_t sas_key_duration_minutes;
 } iot_sample_environment_variables;
+
+typedef struct
+{
+  uint8_t* device_id;
+  uint16_t device_id_len;
+  uint8_t* sas_token;
+  uint16_t sas_token_len;
+} iot_sample_credentials;
 
 typedef enum
 {
@@ -187,18 +164,6 @@ typedef enum
 } iot_sample_name;
 
 extern bool is_device_operational;
-
-/*
- * @brief Reads in the environment variables set by the user for running the sample
- *
- * @param[in] type Enumerated type of the sample
- * @param[in] name Enumerated name of the sample
- * @param[out] out_env_vars Pointer to the struct containing all read-in environment variables
- */
-void iot_sample_read_environment_variables(
-    iot_sample_type type,
-    iot_sample_name name,
-    iot_sample_environment_variables* out_env_vars);
 
 /*
  * @brief Builds an MQTT endpoint C string for an Azure IoT Hub or provisioning service
@@ -230,22 +195,5 @@ void iot_sample_sleep_for_seconds(uint32_t seconds);
  * @return Total time in seconds
  */
 uint32_t iot_sample_get_epoch_expiration_time_from_minutes(uint32_t minutes);
-
-/*
- * @brief Generates the Base64-encoded and signed signature using HMAC-SHA256 signing
- *
- * @param[in] sas_base64_encoded_key An #az_span containing the SAS key that will be used for
- * signing
- * @param[in] sas_signature An #az_span containing the signature
- * @param[in] sas_base64_encoded_signed_signature An #az_span with sufficient capacity to hold the
- * encoded signed signature
- * @param[out] out_sas_base64_encoded_signed_signature A pointer to the #az_span containing the
- * encoded signed signature
- */
-void iot_sample_generate_sas_base64_encoded_signed_signature(
-    az_span sas_base64_encoded_key,
-    az_span sas_signature,
-    az_span sas_base64_encoded_signed_signature,
-    az_span* out_sas_base64_encoded_signed_signature);
 
 #endif // IOT_SAMPLE_COMMON_H

@@ -32,7 +32,7 @@
  */
 
 /** @file
- *  Log header file for azure-c-sdk-port library for AnyCloud framework.
+ *  Log header file for azure-c-sdk-port library.
  */
 #pragma once
 

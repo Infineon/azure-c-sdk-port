@@ -42,6 +42,16 @@
 #define MQTT_CLIENT_IDENTIFIER_AZURE_SAS             "Replace this string by device ID generated from Azure cloud" /* Unique Device identifier */
 #define MQTT_CLIENT_IDENTIFIER_AZURE_CERT            "Replace this string by device ID generated from Azure cloud" /* Unique Device identifier */
 
+#ifndef PSA_DEVICEID_UID
+/* UID for provisioned device ID */
+#define PSA_DEVICEID_UID                      ( 2U )
+#endif
+
+#ifndef PSA_SAS_TOKEN_UID
+/* UID for provisioned SAS token */
+#define PSA_SAS_TOKEN_UID                     ( 3U )
+#endif
+
 /**
  * @brief Length of client identifier
  */
@@ -114,7 +124,6 @@
  */
 #define MQTT_KEEP_ALIVE_INTERVAL_SECONDS                  ( 240U )
 
-
 /**
  * MQTT-supported QoS levels
  */
@@ -162,6 +171,19 @@ typedef enum {
 #define IOT_AZURE_ID_SCOPE                       "Replace this string by generated ID scope from Azure portal for DPS"
 #define IOT_AZURE_ID_SCOPE_LEN                   ( ( uint16_t ) ( sizeof( IOT_AZURE_ID_SCOPE ) - 1 ) )
 
+#ifdef CY_SECURE_SOCKETS_PKCS_SUPPORT
+/* For PKCS feature support demo on CY8CKIT-064S0S2-4343W hardware, RootCA, device key and cert are provisioned to hardware.
+ * No need to send cert and keys from application.
+ */
+#define IOT_AZURE_ROOT_CA_LENGTH                 ( 0 )
+#define IOT_AZURE_CLIENT_CERT_LENGTH             ( 0 )
+#define IOT_AZURE_CLIENT_KEY_LENGTH              ( 0 )
+#else
+#define IOT_AZURE_ROOT_CA_LENGTH                 ( ( uint16_t ) ( sizeof( azure_root_ca_certificate ) ) )
+#define IOT_AZURE_CLIENT_CERT_LENGTH             ( ( uint16_t ) ( sizeof( azure_client_cert ) ) )
+#define IOT_AZURE_CLIENT_KEY_LENGTH              ( ( uint16_t ) ( sizeof( azure_client_key ) ) )
+#endif
+
 /**********************************************************************************************/
 
 /* Azure Broker connection Info */
@@ -175,6 +197,5 @@ static const char azure_client_cert[] =
 /* Azure - private key */
 static const char azure_client_key[] =
 "Replace this string with generated private key";
-
 /*****************************************************************************************/
 #endif /* CY_MQTT_APP_H_ */
