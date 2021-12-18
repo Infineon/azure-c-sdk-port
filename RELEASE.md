@@ -12,6 +12,11 @@ None. There is a possible issue either in the Azure C SDK or the procedure for g
 
 ## Changelog
 
+### v1.2.0
+
+- Added support for CY8CEVAL-062S2-MUR-43439M2 kit
+- Removed Azure sample applications.
+
 ### v1.1.0
 
 - Added support for "secure" kit (for example: CY8CKIT-064S0S2-4343W)

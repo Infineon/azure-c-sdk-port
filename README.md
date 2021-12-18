@@ -22,6 +22,8 @@ This library implements the port layer for the [Azure SDK for Embedded C](https:
 
 - [PSoC&trade; 62S2 evaluation kit (CY8CEVAL-062S2-LAI-4373M2)](https://www.cypress.com/documentation/development-kitsboards/psoc-62s2-evaluation-kit-cy8ceval-062s2)
 
+- [PSoC&trade; 62S2 evaluation kit (CY8CEVAL-062S2-MUR-43439M2)](https://www.cypress.com/documentation/development-kitsboards/psoc-62s2-evaluation-kit-cy8ceval-062s2)
+
 ## Supported frameworks
 
 This middleware library is supported on the ModusToolbox&trade; environment.
@@ -87,7 +89,6 @@ This library is supported only on the ModusToolbox&trade; environment.
        $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/coreMQTT
        libs/aws-iot-device-sdk-embedded-C/libraries/standard/coreMQTT
        ```
-Sample applications for Azure IoT hub and Azure DPS features are located in *./sample_app/*. For running the sample applications on PSoC&trade; 6 MCU connectivity-enabled platforms, see README.md located in *./sample_app/README.md*.
 
 ## Additional information
 
