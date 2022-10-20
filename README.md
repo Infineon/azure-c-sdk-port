@@ -14,15 +14,15 @@ This library implements the port layer for the [Azure SDK for Embedded C](https:
 
 ## Supported platforms
 
-- [PSoC&trade; 6 Wi-Fi Bluetooth&reg; prototyping kit (CY8CPROTO-062-4343W)](https://www.cypress.com/documentation/development-kitsboards/psoc-6-wi-fi-bt-prototyping-kit-cy8cproto-062-4343w)
+- [PSoC&trade; 6 Wi-Fi Bluetooth&reg; prototyping kit (CY8CPROTO-062-4343W)](https://www.infineon.com/cms/en/product/evaluation-boards/cy8cproto-062-4343w/)
 
-- [PSoC&trade; 62S2 Wi-Fi Bluetooth&reg; pioneer kit (CY8CKIT-062S2-43012)](https://www.cypress.com/documentation/development-kitsboards/psoc-62s2-wi-fi-bt-pioneer-kit-cy8ckit-062s2-43012)
+- [PSoC&trade; 62S2 Wi-Fi Bluetooth&reg; pioneer kit (CY8CKIT-062S2-43012)](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-062s2-43012/)
 
-- [PSoC&trade; 64 "Standard Secure" AWS Wi-Fi Bluetooth&reg; pioneer kit (CY8CKIT-064S0S2-4343W)](https://www.cypress.com/documentation/development-kitsboards/psoc-64-standard-secure-aws-wi-fi-bt-pioneer-kit-cy8ckit)
+- [PSoC&trade; 64 "Standard Secure" AWS Wi-Fi Bluetooth&reg; pioneer kit (CY8CKIT-064S0S2-4343W)](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-064s0s2-4343w/)
 
-- [PSoC&trade; 62S2 evaluation kit (CY8CEVAL-062S2-LAI-4373M2)](https://www.cypress.com/documentation/development-kitsboards/psoc-62s2-evaluation-kit-cy8ceval-062s2)
+- [PSoC&trade; 62S2 evaluation kit (CY8CEVAL-062S2-LAI-4373M2)](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ceval-062s2/)
 
-- [PSoC&trade; 62S2 evaluation kit (CY8CEVAL-062S2-MUR-43439M2)](https://www.cypress.com/documentation/development-kitsboards/psoc-62s2-evaluation-kit-cy8ceval-062s2)
+- [PSoC&trade; 62S2 evaluation kit (CY8CEVAL-062S2-MUR-43439M2)](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ceval-062s2/)
 
 ## Supported frameworks
 
@@ -48,17 +48,19 @@ This environment uses the [abstraction-rtos](https://github.com/Infineon/abstrac
 
 This library is supported only on the ModusToolbox&trade; environment.
 
-1. Review pre-defined configuration files that have been bundled with the *wifi-mw-core* library for FreeRTOS, lwIP, and mbed TLS, and make the required changes.
+1. Review and make the required changes to the pre-defined configuration files.
 
-   See the [README.md](https://github.com/Infineon/wifi-mw-core/blob/master/README.md).
+- The configuration files are bundled with the wifi-mw-core library for FreeRTOS, lwIP, and Mbed TLS. See README.md for details.
+
+   SeSee the "Quick Start" section in [README.md](https://github.com/Infineon/wifi-mw-core/blob/master/README.md)(https://github.com/Infineon/wifi-core-freertos-lwip-mbedtls/blob/master/README.md).
+
+- If the application is using bundle library then the configuration files are in the bundle library. For example if the application is using Wi-Fi core freertos lwip mbedtls bundle library, the configuration files are in wifi-core-freertos-lwip-mbedtls/configs folder. Similarly if the application is using Ethernet Core FreeRTOS lwIP mbedtls library, the configuration files are in ethernet-core-freertos-lwip-mbedtls/configs folder.
 
 2. Define the following COMPONENTS in the application's Makefile for the Azure port library.
-
-   For additional information, see the [README.md](https://github.com/Infineon/wifi-mw-core/blob/master/README.md).
-
     ```
     COMPONENTS=FREERTOS MBEDTLS LWIP SECURE_SOCKETS
     ```
+
 3. By default, the Azure port library disables all the debug log messages. Do the following to enable log messages:
 
    1. Add the `ENABLE_AZ_PORT_LOGS` macro to the *DEFINES* in the code example's Makefile. The Makefile entry would look like as follows:
@@ -102,6 +104,6 @@ This library is supported only on the ModusToolbox&trade; environment.
 
 - [Connectivity utilities API documentation](https://Infineon.github.io/connectivity-utilities/api_reference_manual/html/group__logging__utils.html) for details of cy-log
 
-- [ModusToolbox&trade; software environment, quick start guide, documentation, and videos](https://www.cypress.com/products/modustoolbox-software-environment)
+- [ModusToolbox&trade; software environment, quick start guide, documentation, and videos](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software)
 
 - [ModusToolbox&trade; AnyCloud code examples](https://github.com/Infineon?q=mtb-example-anycloud%20NOT%20Deprecated)
