@@ -13,6 +13,11 @@ None. There is a possible issue either in the Azure C SDK or the procedure for g
 
 ## Changelog
 
+### v1.3.0
+
+- Removed deps folder
+- Added support for KIT_XMC72_EVK_MUR_43439M2 kit
+
 ### v1.2.1
 
 - Added support for CM0P core.
