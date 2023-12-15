@@ -13,6 +13,11 @@ None. There is a possible issue either in the Azure C SDK or the procedure for g
 
 ## Changelog
 
+
+### v1.4.0
+
+- Added support for CY8CEVAL-062S2-CYW43022CUB kit
+
 ### v1.3.0
 
 - Removed deps folder
