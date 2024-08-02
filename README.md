@@ -30,6 +30,8 @@ This library implements the port layer for the [Azure SDK for Embedded C](https:
 
 - [PSoC&trade; 62S2 evaluation kit (CY8CEVAL-062S2-CYW43022CUB)](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ceval-062s2/)
 
+- [PSoC&trade; 62S2 evaluation kit (CY8CEVAL-062S2-CYW955513SDM2WLIPA)]( https://www.infineon.com/cms/en/product/evaluation-boards/cy8ceval-062s2/ )
+
 ## Supported frameworks
 
 This middleware library is supported on the ModusToolbox&trade; environment.
@@ -112,4 +114,4 @@ This library is supported only on the ModusToolbox&trade; environment.
 
 - [ModusToolbox&trade; software environment, quick start guide, documentation, and videos](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software)
 
-- [ModusToolbox&trade; AnyCloud code examples](https://github.com/Infineon?q=mtb-example-anycloud%20NOT%20Deprecated)
+- [ModusToolbox&trade; code examples](https://github.com/Infineon/Code-Examples-for-ModusToolbox-Software)

@@ -14,6 +14,10 @@ None. There is a possible issue either in the Azure C SDK or the procedure for g
 ## Changelog
 
 
+### v1.5.0
+
+- Added support for CY8CEVAL-062S2-CYW955513SDM2WLIPA kit
+
 ### v1.4.0
 
 - Added support for CY8CEVAL-062S2-CYW43022CUB kit
