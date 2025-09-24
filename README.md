@@ -32,6 +32,8 @@ This library implements the port layer for the [Azure SDK for Embedded C](https:
 
 - [PSoC&trade; 62S2 evaluation kit (CY8CEVAL-062S2-CYW955513SDM2WLIPA)]( https://www.infineon.com/cms/en/product/evaluation-boards/cy8ceval-062s2/ )
 
+- PSOC&trade; Edge E84 Evaluation Kit
+
 ## Supported frameworks
 
 This middleware library is supported on the ModusToolbox&trade; environment.

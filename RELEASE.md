@@ -13,6 +13,10 @@ None. There is a possible issue either in the Azure C SDK or the procedure for g
 
 ## Changelog
 
+### v1.6.0
+
+- Added support for PSOC&trade; Edge E84 (PSE84) platform
+- Enabled LLVM_ARM toolchain support
 
 ### v1.5.0
 
@@ -56,12 +60,11 @@ None. There is a possible issue either in the Azure C SDK or the procedure for g
 
 This version of the library was validated for compatibility with the following software and tools:
 
-| Software and tools                                      | Version |
-| :---                                                    | :----:  |
-| ModusToolbox&trade; software environment                | 3.0     |
-| - ModusToolbox&trade; device configurator               | 4.0     |
-| - CAPSENSE&trade; configurator / tuner tools            | 5.0     |
-| PSoC&trade; 6 peripheral driver library (PDL)           | 3.0.0   |
-| GCC compiler                                            | 10.3.1  |
-| IAR compiler                                            | 9.30   |
-| Arm&reg; compiler 6                                     | 6.16    |
+| Software and tools                                              | Version |
+| :---                                                            | :----:  |
+| ModusToolbox&trade; software environment                        | 3.6     |
+| ModusToolbox&trade; Device Configurator                         | 5.50    |
+| GCC Compiler                                                    | 14.2.1  |
+| IAR Compiler                                                    | 9.50.2  |
+| Arm&reg; Compiler 6                                             | 6.22    |
+| LLVM compiler                                                   | 19.1.5  |
