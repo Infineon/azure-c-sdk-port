@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['functions_20',['Functions',['../group__group__aws__iot__device__sdk__port__functions.html',1,'']]]
+  ['3_200_0',['v1.3.0',['../md__2builds_2repo_2azure-c-sdk-port_2_r_e_l_e_a_s_e.html#autotoc_md28',1,'']]]
 ];

@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['handle_21',['handle',['../struct_network_context.html#a48ed6ae322639ce72cce2eb920fda581',1,'NetworkContext']]],
-  ['host_5fname_22',['host_name',['../structcy__awsport__server__info__t.html#a0bfb87b543600a3128126dd0fd44cbfe',1,'cy_awsport_server_info_t']]]
+  ['4_200_0',['v1.4.0',['../md__2builds_2repo_2azure-c-sdk-port_2_r_e_l_e_a_s_e.html#autotoc_md27',1,'']]]
 ];

@@ -25,7 +25,7 @@
 var NAVTREE =
 [
   [ "Azure C SDK Port Library", "index.html", [
-    [ "Overview", "index.html", null ]
+    [ "Azure C SDK Port Library - Azure IoT Connectivity Port Layer for Infineon MCUs", "index.html", null ]
   ] ]
 ];
 
